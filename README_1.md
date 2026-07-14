@@ -8,7 +8,7 @@ App para verificar facturas de transporte contra tarifas registradas en base de 
 
 ```
 revisor-facturas/
-├── app.py              ← Script principal
+├── INVOICE RUNNER.py              ← Script principal
 ├── DB.xlsx             ← Base de datos de tarifas (tu archivo)
 ├── requirements.txt    ← Librerías necesarias
 ├── README.md           ← Este archivo
@@ -40,26 +40,7 @@ Se abre automáticamente en tu navegador en `http://localhost:8501`
 
 ## ☁️ Cómo subir a GitHub y desplegarlo gratis (Streamlit Cloud)
 
-### Paso 1 — Crear cuenta en GitHub
-1. Entrá a [github.com](https://github.com) y creá una cuenta gratuita.
-
-### Paso 2 — Crear repositorio
-1. Hacé clic en **"New repository"**
-2. Ponele un nombre: `revisor-facturas`
-3. Dejalo en **Public**
-4. Hacé clic en **"Create repository"**
-
-### Paso 3 — Subir los archivos
-En la página del repositorio vacío:
-1. Hacé clic en **"uploading an existing file"**
-2. Arrastrá estos archivos:
-   - `app.py`
-   - `DB.xlsx`
-   - `requirements.txt`
-   - `README.md`
-3. Hacé clic en **"Commit changes"**
-
-### Paso 4 — Desplegar en Streamlit Cloud
+### Desplegar en Streamlit Cloud
 1. Entrá a [share.streamlit.io](https://share.streamlit.io)
 2. Iniciá sesión con tu cuenta de GitHub
 3. Hacé clic en **"New app"**
@@ -67,17 +48,15 @@ En la página del repositorio vacío:
 5. En **"Main file path"** escribí: `app.py`
 6. Hacé clic en **"Deploy"**
 
-En 2-3 minutos tenés una URL pública para compartir con tu jefe. 🎉
-
 ---
 
 ## ⚙️ Personalización
 
-Abrí `app.py` y editá estas líneas al principio:
+Abrí `Invoice Runner` y edite estas líneas al principio, si es necesario:
 
 ```python
-TASA_CAMBIO = 36.50   # Cambiá la tasa USD → Córdobas
-DB_FILE = "DB.xlsx"   # Nombre de tu archivo de tarifas
+TASA_CAMBIO = 36.6243   # tasa USD → Córdobas modicaficable 
+DB_FILE = "DB.xlsx"   # Nombre de archivo de tarifas
 ```
 
 ---
