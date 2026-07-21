@@ -276,7 +276,7 @@ if st.button("💾 Guardar revisión", type="primary", use_container_width=True)
         "Resultado":           "OK" if abs(monto_fact - total_esp) <= 0.01 else "INCONSISTENCIA",
         "Tasa de Cambio":      TASA_CAMBIO,
     })
-    st.success("✅ Revisión guardada en revisiones.xlsx")
+    st.success("✅ Verificación guardada en revisiones.xlsx")
 
 # ─────────────────────────────────────────
 # HISTORIAL
