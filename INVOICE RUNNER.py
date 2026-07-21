@@ -28,7 +28,6 @@ CLIENTE_COLS = {"AMBER":"amber","IMPACTO":"impacto","NLA":"nla","INDUCARIBE":"in
 @st.cache_data
 def cargar_tarifas():
     df = pd.read_excel(DB_FILE, sheet_name="Tarifas", header=1)
-    # Rename columns to simple internal keys
     rename = {
         "TRANSPORTE":            "transporte",
         "ESTADÍAS":              "estadias",
@@ -122,15 +121,16 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
          padding:1rem 1.4rem; color:#7b1a1a; font-weight:600; font-size:0.95rem; margin-top:1rem; }
 .warn  { background:#fff8e8; border:1.5px solid #f39c12; border-radius:12px;
          padding:1rem 1.4rem; color:#7a4a00; font-weight:600; font-size:0.95rem; margin-top:1rem; }
-h1 { color:#1a1a2e !important; font-weight:700 !important; }
+/* Título celeste claro */
+h1 { color: #7ec8e3 !important; font-weight: 700 !important; }
 </style>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────
-st.title("🧾 Revisor de Facturas")
-st.caption("Verificá tarifas de transporte contra tu base de datos oficial.")
+st.title("🧾 Revisor de Facturas - Oceanica Internacional")
+st.caption("by AGVM")
 
 try:
     df = cargar_tarifas()
@@ -145,34 +145,33 @@ transportes = sorted(df["transporte"].dropna().unique().tolist())
 # ─────────────────────────────────────────
 st.markdown('<p class="section-title">📋 Datos de la factura</p>', unsafe_allow_html=True)
 
+# Fila 1: transportista y fecha (proveedor eliminado — se toma del transportista seleccionado)
 c1, c2 = st.columns(2)
-with c1: proveedor    = st.text_input("Proveedor emisor", placeholder="Ej. Transportes del Norte")
-with c2: fecha_recib  = st.date_input("Fecha recibida", value=datetime.today())
+with c1: transporte  = st.selectbox("Transportista / Proveedor", transportes)
+with c2: fecha_recib = st.date_input("Fecha recibida", value=datetime.today())
 
 c3, c4 = st.columns(2)
-with c3: transporte   = st.selectbox("Transportista", transportes)
-with c4: destino      = st.selectbox("Destino", DESTINOS)
+with c3: destino   = st.selectbox("Destino", DESTINOS)
+with c4: selectivo = st.selectbox("Selectivo", ["Verde", "Rojo", "DUCA"])
 
 c5, c6 = st.columns(2)
-with c5: selectivo    = st.selectbox("Selectivo", ["Verde", "Rojo", "DUCA"])
-with c6: cliente      = st.selectbox("Cliente especial", CLIENTES_ESP)
+with c5: cliente  = st.selectbox("Cliente especial", CLIENTES_ESP)
+with c6: n_cont   = st.number_input("# Contenedores", min_value=1, max_value=50, value=1, step=1)
 
-c7, c8 = st.columns(2)
-with c7: n_cont       = st.number_input("# Contenedores", min_value=1, max_value=50, value=1, step=1)
-with c8: moneda       = st.radio("Moneda", ["USD", "Córdobas (C$)"], horizontal=True)
+moneda = st.radio("Moneda", ["USD", "Córdobas (C$)"], horizontal=True)
 
 st.markdown('<p class="section-title">➕ Cargos adicionales (cantidad de unidades)</p>', unsafe_allow_html=True)
 
 ca1, ca2, ca3 = st.columns(3)
-with ca1: q_estadias   = st.number_input("Estadías",       min_value=0, value=0, step=1)
-with ca2: q_triple     = st.number_input("Triple Eje",     min_value=0, value=0, step=1)
-with ca3: q_mov_adic   = st.number_input("Mov. Adicional", min_value=0, value=0, step=1)
+with ca1: q_estadias = st.number_input("Estadías",       min_value=0, value=0, step=1)
+with ca2: q_triple   = st.number_input("Triple Eje",     min_value=0, value=0, step=1)
+with ca3: q_mov_adic = st.number_input("Mov. Adicional", min_value=0, value=0, step=1)
 
 ca4, ca5 = st.columns(2)
-with ca4: q_agil26     = st.number_input("Agilización ≤26 TON", min_value=0, value=0, step=1)
-with ca5: q_agil_m26   = st.number_input("Agilización >26 TON", min_value=0, value=0, step=1)
+with ca4: q_agil26   = st.number_input("Agilización ≤26 TON", min_value=0, value=0, step=1)
+with ca5: q_agil_m26 = st.number_input("Agilización >26 TON", min_value=0, value=0, step=1)
 
-st.markdown('<p class="section-title">🔍 Verificación</p>', unsafe_allow_html=True)
+st.markdown('<p class="section-title"> Verificación</p>', unsafe_allow_html=True)
 monto_fact = st.number_input("Monto en factura (USD)", min_value=0.0, value=0.0,
                               step=0.01, format="%.2f")
 
@@ -181,12 +180,11 @@ monto_fact = st.number_input("Monto en factura (USD)", min_value=0.0, value=0.0,
 # ─────────────────────────────────────────
 fila = df[df["transporte"] == transporte]
 if fila.empty:
-    st.warning("No se encontraron datos para ese transportista.")
+    st.warning("No se encontraron datos o tarifas aplicables para ese transportista.")
     st.stop()
 fila = fila.iloc[0]
 
 def v(campo):
-    """Retorna el valor numérico o 0 si es NaN/None."""
     val = fila.get(campo, None)
     try:    return float(val) if pd.notna(val) else 0.0
     except: return 0.0
@@ -196,54 +194,42 @@ def fmt(val):
         return f"C$ {val * TASA_CAMBIO:,.2f}"
     return f"$ {val:,.2f}"
 
-# Tarifa base de destino
-dest_col   = DEST_COLS[destino]
+dest_col    = DEST_COLS[destino]
 tarifa_dest = v(dest_col)
+tarifa_cli  = v(CLIENTE_COLS[cliente]) if cliente != "Ninguno" else 0.0
 
-# Tarifa de cliente especial (si aplica)
-if cliente != "Ninguno":
-    tarifa_cli = v(CLIENTE_COLS[cliente])
-else:
-    tarifa_cli = 0.0
-
-# Base efectiva = cliente especial si existe, sino destino
 if tarifa_cli > 0:
-    base        = tarifa_cli
-    base_label  = f"Tarifa {cliente}"
+    base, base_label = tarifa_cli, f"Tarifa {cliente}"
 elif tarifa_dest > 0:
-    base        = tarifa_dest
-    base_label  = f"Flete a {destino}"
+    base, base_label = tarifa_dest, f"Flete a {destino}"
 else:
-    base        = 0.0
-    base_label  = f"Flete a {destino} (sin tarifa)"
+    base, base_label = 0.0, f"Flete a {destino} (sin tarifa)"
 
-# Cargos por selectivo
 julia   = v("julia_herrera") if selectivo in ["Verde","DUCA"] else 0.0
 scanner = v("scanner")       if selectivo == "DUCA"           else 0.0
 
-# Cargos adicionales
-c_estadias  = v("estadias")      * q_estadias
-c_triple    = v("triple_eje")    * q_triple
-c_mov_adic  = v("mov_adicional") * q_mov_adic
-c_agil26    = v("agil_hasta26")  * q_agil26
-c_agil_m26  = v("agil_desde26")  * q_agil_m26
+c_estadias = v("estadias")      * q_estadias
+c_triple   = v("triple_eje")    * q_triple
+c_mov_adic = v("mov_adicional") * q_mov_adic
+c_agil26   = v("agil_hasta26")  * q_agil26
+c_agil_m26 = v("agil_desde26")  * q_agil_m26
 
-sub_base    = base  * n_cont
-sub_select  = (julia + scanner) * n_cont
-sub_extras  = c_estadias + c_triple + c_mov_adic + c_agil26 + c_agil_m26
-total_esp   = sub_base + sub_select + sub_extras
+sub_base   = base * n_cont
+sub_select = (julia + scanner) * n_cont
+sub_extras = c_estadias + c_triple + c_mov_adic + c_agil26 + c_agil_m26
+total_esp  = sub_base + sub_select + sub_extras
 
 # ─────────────────────────────────────────
 # DESGLOSE VISUAL
 # ─────────────────────────────────────────
 lineas = [(base_label, f"× {n_cont} cont.", sub_base)]
-if julia   > 0: lineas.append(("Mov. Julia Herrera", f"{fmt(julia)} × {n_cont}", julia * n_cont))
-if scanner > 0: lineas.append(("Scanner",            f"{fmt(scanner)} × {n_cont}", scanner * n_cont))
-if c_estadias > 0:  lineas.append(("Estadías",           f"{fmt(v('estadias'))} × {q_estadias}",      c_estadias))
-if c_triple   > 0:  lineas.append(("Triple Eje",         f"{fmt(v('triple_eje'))} × {q_triple}",      c_triple))
-if c_mov_adic > 0:  lineas.append(("Mov. Adicional",     f"{fmt(v('mov_adicional'))} × {q_mov_adic}", c_mov_adic))
-if c_agil26   > 0:  lineas.append(("Agilización ≤26 TON",f"{fmt(v('agil_hasta26'))} × {q_agil26}",   c_agil26))
-if c_agil_m26 > 0:  lineas.append(("Agilización >26 TON",f"{fmt(v('agil_desde26'))} × {q_agil_m26}", c_agil_m26))
+if julia      > 0: lineas.append(("Mov. Julia Herrera",   f"{fmt(julia)} × {n_cont}",             julia * n_cont))
+if scanner    > 0: lineas.append(("Scanner",              f"{fmt(scanner)} × {n_cont}",           scanner * n_cont))
+if c_estadias > 0: lineas.append(("Estadías",             f"{fmt(v('estadias'))} × {q_estadias}", c_estadias))
+if c_triple   > 0: lineas.append(("Triple Eje",           f"{fmt(v('triple_eje'))} × {q_triple}", c_triple))
+if c_mov_adic > 0: lineas.append(("Mov. Adicional",       f"{fmt(v('mov_adicional'))} × {q_mov_adic}", c_mov_adic))
+if c_agil26   > 0: lineas.append(("Agilización ≤26 TON",  f"{fmt(v('agil_hasta26'))} × {q_agil26}",   c_agil26))
+if c_agil_m26 > 0: lineas.append(("Agilización >26 TON",  f"{fmt(v('agil_desde26'))} × {q_agil_m26}", c_agil_m26))
 
 rows_html = ""
 for concepto, detalle, monto in lineas:
@@ -251,13 +237,11 @@ for concepto, detalle, monto in lineas:
                   f'<span class="d-label">{concepto} <span class="d-detail">({detalle})</span></span>'
                   f'<span class="d-amount">{fmt(monto)}</span></div>')
 rows_html += f'<div class="d-total"><span>TOTAL ESPERADO</span><span>{fmt(total_esp)}</span></div>'
-
 st.markdown(f'<div class="desglose">{rows_html}</div>', unsafe_allow_html=True)
 
-# Observaciones del transportista
 obs = str(fila.get("observaciones","") or "").strip()
 if obs and obs.lower() != "nan":
-    partes = [p.strip() for p in obs.replace("|||","||").split("||") if p.strip()]
+    partes   = [p.strip() for p in obs.replace("|||","||").split("||") if p.strip()]
     obs_html = " &nbsp;|&nbsp; ".join(f"⚠️ {p}" for p in partes)
     st.markdown(f'<div class="obs-box">{obs_html}</div>', unsafe_allow_html=True)
 
@@ -267,36 +251,32 @@ if obs and obs.lower() != "nan":
 if monto_fact > 0:
     dif = monto_fact - total_esp
     if abs(dif) <= 0.01:
-        st.markdown(f'<div class="ok">✅ Factura correcta &nbsp;|&nbsp; Esperado: {fmt(total_esp)} &nbsp;|&nbsp; Factura: {fmt(monto_fact)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ok">✅ Factura correcta, 📝 revisar Posición, nombre del cliente y a quién se le factura. &nbsp;|&nbsp; Esperado: {fmt(total_esp)} &nbsp;|&nbsp; Factura: {fmt(monto_fact)}</div>', unsafe_allow_html=True)
     elif dif > 0:
-        st.markdown(f'<div class="error">❌ Cobrada de MÁS &nbsp;|&nbsp; Diferencia: {fmt(dif)} &nbsp;|&nbsp; Esperado: {fmt(total_esp)} &nbsp;|&nbsp; Factura: {fmt(monto_fact)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="error">❌ Factura con cobro de MÁS &nbsp;|&nbsp; Diferencia: {fmt(dif)} &nbsp;|&nbsp; Esperado: {fmt(total_esp)} &nbsp;|&nbsp; Factura: {fmt(monto_fact)}</div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div class="warn">⚠️ Cobrada de MENOS &nbsp;|&nbsp; Diferencia: {fmt(abs(dif))} &nbsp;|&nbsp; Esperado: {fmt(total_esp)} &nbsp;|&nbsp; Factura: {fmt(monto_fact)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="warn">⚠️ Factura con cobro de MENOS &nbsp;|&nbsp; Diferencia: {fmt(abs(dif))} &nbsp;|&nbsp; Esperado: {fmt(total_esp)} &nbsp;|&nbsp; Factura: {fmt(monto_fact)}</div>', unsafe_allow_html=True)
 
 # ─────────────────────────────────────────
 # GUARDAR REVISIÓN
 # ─────────────────────────────────────────
 st.markdown("")
 if st.button("💾 Guardar revisión", type="primary", use_container_width=True):
-    if not proveedor.strip():
-        st.warning("Ingresá el nombre del proveedor antes de guardar.")
-    else:
-        guardar_revision({
-            "Fecha Recibida":      str(fecha_recib),
-            "Fecha Revisada":      datetime.today().strftime("%Y-%m-%d %H:%M"),
-            "Proveedor":           proveedor.strip(),
-            "Transportista":       transporte,
-            "Destino":             destino,
-            "Selectivo":           selectivo,
-            "Cliente Especial":    cliente,
-            "# Contenedores":      n_cont,
-            "Total Esperado USD":  round(total_esp, 2),
-            "Total Factura USD":   round(monto_fact, 2),
-            "Diferencia USD":      round(monto_fact - total_esp, 2),
-            "Resultado":           "OK" if abs(monto_fact - total_esp) <= 0.01 else "INCONSISTENCIA",
-            "Tasa de Cambio":      TASA_CAMBIO,
-        })
-        st.success("✅ Revisión guardada en revisiones.xlsx")
+    guardar_revision({
+        "Fecha Recibida":      str(fecha_recib),
+        "Fecha Revisada":      datetime.today().strftime("%Y-%m-%d %H:%M"),
+        "Transportista":       transporte,
+        "Destino":             destino,
+        "Selectivo":           selectivo,
+        "Cliente Especial":    cliente,
+        "# Contenedores":      n_cont,
+        "Total Esperado USD":  round(total_esp, 2),
+        "Total Factura USD":   round(monto_fact, 2),
+        "Diferencia USD":      round(monto_fact - total_esp, 2),
+        "Resultado":           "OK" if abs(monto_fact - total_esp) <= 0.01 else "INCONSISTENCIA",
+        "Tasa de Cambio":      TASA_CAMBIO,
+    })
+    st.success("✅ Revisión guardada en revisiones.xlsx")
 
 # ─────────────────────────────────────────
 # HISTORIAL
