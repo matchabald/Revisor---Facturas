@@ -219,7 +219,7 @@ sub_extras = c_estadias + c_triple + c_mov_adic + c_agil26 + c_agil_m26
 total_esp  = sub_base + sub_select + sub_extras
 
 # ─────────────────────────────────────────
-# DESGLOSE VISUAL
+# DESGLOSE VISUAL - revisar los exras q no cargan fak
 # ─────────────────────────────────────────
 lineas = [(base_label, f"× {n_cont} cont.", sub_base)]
 if julia      > 0: lineas.append(("Mov. Julia Herrera",   f"{fmt(julia)} × {n_cont}",             julia * n_cont))
