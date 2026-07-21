@@ -129,7 +129,7 @@ h1 { color: #7ec8e3 !important; font-weight: 700 !important; }
 # ─────────────────────────────────────────
 # HEADER
 # ─────────────────────────────────────────
-st.title("🧾 Revisor de Facturas - Oceanica Internacional")
+st.title("🧾 Verificador de Facturas - Oceanica Internacional")
 st.caption("by AGVM")
 
 try:
