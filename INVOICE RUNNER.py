@@ -145,7 +145,6 @@ transportes = sorted(df["transporte"].dropna().unique().tolist())
 # ─────────────────────────────────────────
 st.markdown('<p class="section-title">📋 Datos de la factura</p>', unsafe_allow_html=True)
 
-# Fila 1: transportista y fecha (proveedor eliminado — se toma del transportista seleccionado)
 c1, c2 = st.columns(2)
 with c1: transporte  = st.selectbox("Transportista / Proveedor", transportes)
 with c2: fecha_recib = st.date_input("Fecha recibida", value=datetime.today())
