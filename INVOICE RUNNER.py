@@ -84,7 +84,7 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .block-container { max-width: 820px; padding-top: 2rem; }
 .stSelectbox label, .stNumberInput label, .stTextInput label, .stDateInput label, .stRadio label {
-    font-weight: 600; color: #1a1a2e; font-size: 0.8rem;
+    font-weight: 600; color: #ffffff; font-size: 0.8rem;
     letter-spacing: 0.05em; text-transform: uppercase;
 }
 .section-title {
@@ -145,9 +145,14 @@ transportes = sorted(df["transporte"].dropna().unique().tolist())
 # ─────────────────────────────────────────
 st.markdown('<p class="section-title">📋 Datos de la factura</p>', unsafe_allow_html=True)
 
+# Fila 1: transportista y fecha (proveedor eliminado — se toma del transportista seleccionado)
 c1, c2 = st.columns(2)
 with c1: transporte  = st.selectbox("Transportista / Proveedor", transportes)
 with c2: fecha_recib = st.date_input("Fecha recibida", value=datetime.today())
+
+cf1, cf2 = st.columns(2)
+with cf1: num_factura = st.text_input("N° Factura *", placeholder="Ej. FAC-2024-001")
+with cf2: posicion    = st.text_input("Posición", placeholder="Ej. POS-2024-123")
 
 c3, c4 = st.columns(2)
 with c3: destino   = st.selectbox("Destino", DESTINOS)
@@ -207,7 +212,7 @@ else:
 julia   = v("julia_herrera") if selectivo in ["Verde","DUCA"] else 0.0
 scanner = v("scanner")       if selectivo == "DUCA"           else 0.0
 
-c_estadias = v("estadias")      * q_estadias
+c_estadias = v("estadias")      * q_estadias * n_cont
 c_triple   = v("triple_eje")    * q_triple
 c_mov_adic = v("mov_adicional") * q_mov_adic
 c_agil26   = v("agil_hasta26")  * q_agil26
@@ -219,7 +224,7 @@ sub_extras = c_estadias + c_triple + c_mov_adic + c_agil26 + c_agil_m26
 total_esp  = sub_base + sub_select + sub_extras
 
 # ─────────────────────────────────────────
-# DESGLOSE VISUAL - revisar los exras q no cargan fak
+# DESGLOSE VISUAL
 # ─────────────────────────────────────────
 lineas = [(base_label, f"× {n_cont} cont.", sub_base)]
 if julia      > 0: lineas.append(("Mov. Julia Herrera",   f"{fmt(julia)} × {n_cont}",             julia * n_cont))
@@ -261,7 +266,12 @@ if monto_fact > 0:
 # ─────────────────────────────────────────
 st.markdown("")
 if st.button("💾 Guardar revisión", type="primary", use_container_width=True):
+    if not num_factura.strip():
+        st.warning("⚠️ El N° de Factura es obligatorio para guardar.")
+        st.stop()
     guardar_revision({
+        "N° Factura":          num_factura.strip(),
+        "Posición":            posicion.strip(),
         "Fecha Recibida":      str(fecha_recib),
         "Fecha Revisada":      datetime.today().strftime("%Y-%m-%d %H:%M"),
         "Transportista":       transporte,
