@@ -152,8 +152,7 @@ with c2: fecha_recib = st.date_input("Fecha recibida", value=datetime.today())
 
 cf1, cf2 = st.columns(2)
 with cf1: num_factura = st.text_input("N° Factura *", placeholder="E.g. 11985")
-with cf2: posicion    = st.text_input("Posición", placeholder="E.g. IM05-01032-2026
-")
+with cf2: posicion    = st.text_input("Posición", placeholder="E.g. IM05-01032-2026")
 
 c3, c4 = st.columns(2)
 with c3: destino   = st.selectbox("Destino", DESTINOS)
